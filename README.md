@@ -1,9 +1,3 @@
----
-Title: Github README
-Author: Amory Gaylord
-bibliography: bibliography.bib
----
-
 # Introduction
 
 Contains software designed for the generation of gel microscopy datasets. Integrated with Roboflow dataset storage and stores data as COCO-Seg annotations.
