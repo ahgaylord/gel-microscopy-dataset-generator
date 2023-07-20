@@ -8,6 +8,8 @@ sam_b.pt
 runs/*
 SECRET
 YOLOv8
-vid/test/*
-.vscode/*
-__pycache__/*
+vid/test
+.vscode
+__pycache__
+vid
+model/__pycache__
