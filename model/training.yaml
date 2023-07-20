@@ -1,0 +1,5 @@
+train: c:/Users/amory/Documents/Code/Git/gel-machine-learning/model/datasets/smith_vid/train
+val: c:/Users/amory/Documents/Code/Git/gel-machine-learning/model/datasets/smith_vid/valid
+test: c:/Users/amory/Documents/Code/Git/gel-machine-learning/model/datasets/smith_vid/test
+nc: 1
+names: ['blob']
