@@ -1,0 +1,13 @@
+model/datasets
+model/runs
+.spyproject/*
+/model/sam_b.pt
+rtdetr-l.pt
+sam_b.pt
+*.ini
+runs/*
+SECRET
+YOLOv8
+vid/test/*
+.vscode/*
+__pycache__/*
