@@ -13,3 +13,6 @@ vid/test
 __pycache__
 vid
 model/__pycache__
+dist
+build
+DATASETMANAGER.exe
