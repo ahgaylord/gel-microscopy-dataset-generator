@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import skimage.segmentation as seg
 import skimage.color as color
-from model.JSON2YOLO import general_json2yolo as j2y
+from lib.JSON2YOLO import general_json2yolo as j2y
 
 # define defaults
 RED_LOWER = [0, 10, 5]
@@ -681,6 +681,7 @@ def set_up_directories(dataset_name):
 
     # get directory paths
     abs_path = os.path.abspath(os.path.dirname(__file__))
+    vid_folder = abs_path + "\\vid\\"
     model_folder = abs_path + "\\model\\"
     datasets_folder = model_folder + "datasets\\"
     dataset_folder = abs_path + "\\model\\datasets\\" + dataset_name 
@@ -693,6 +694,9 @@ def set_up_directories(dataset_name):
     labels_val_path = validation + "labels\\"
 
     # create directories
+    if not os.path.exists(vid_folder):
+        os.mkdir(vid_folder)
+    
     if not os.path.exists(model_folder):
         os.mkdir(model_folder)
     
