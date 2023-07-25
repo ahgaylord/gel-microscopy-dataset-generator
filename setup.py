@@ -1,4 +1,5 @@
 from PyInstaller import __main__ as m
+import subprocess
 
 DIST = "--distpath"
 NAME = "--name"
