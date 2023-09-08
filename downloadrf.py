@@ -1,7 +1,7 @@
 from roboflow import Roboflow
 import os
 import shutil
-from model.JSON2YOLO import general_json2yolo as j2y
+from lib.JSON2YOLO import general_json2yolo as j2y
 
 my_path = os.path.abspath(os.path.dirname(__file__))
 target = my_path + "\\model\\datasets\\smith_vid_COCO"
