@@ -15,8 +15,5 @@ vid
 model/__pycache__
 dist
 build
-<<<<<<< HEAD
-=======
 DATASETMANAGER.exe
->>>>>>> 2d633f8ee369ac11a8e7f73e95b8a05afee6d87c
 installer
