@@ -13,9 +13,41 @@ import glob
 import json
 
 class analyzer():
+    ''' Analyzes a set of contours from a video, including generating vector fields and shape
+    information.
+
+    Attributes
+    ----------
+    labels : str
+        The .json file containing the video labels in COCO format
+    img_directory : str 
+        The path to the directory containing the frames from a video
+    dataset_name : str
+        The name of the generated dataset (e.g. name of the video)
+    frames_df_csv : str
+        The path to the csv of frame information
+    frames_df : DataFrame
+        A DataFrame containing information about frames
+    contours_df : DataFrame
+        A DataFrame containing information about the contours
+
+    '''
+
+    REFERENCE_SHAPES = {
+        "circle": cv2.circle(np.zeros((100, 100), dtype=np.uint8), (50, 50), 40, 255, -1),
+        "triangle": np.array([[[10, 90], [50, 10], [90, 90]]], dtype=np.int32),
+        "square": np.array([[[10, 10], [90, 10], [90, 90], [10, 90]]], dtype=np.int32),
+        "diamond": np.array([[[50, 10], [90, 50], [50, 90], [10, 50]]], dtype=np.int32),
+        "trapezoid": np.array([[[10, 90], [30, 10], [70, 10], [90, 90]]], dtype=np.int32),
+        "pentagon": np.array([[[50, 10], [90, 30], [75, 80], [25, 80], [10, 30]]], dtype=np.int32),
+        "hexagon": np.array([[[50, 5], [90, 30], [90, 70], [50, 95], [10, 70], [10, 30]]], dtype=np.int32),
+        "heptagon": np.array([[[50, 5], [90, 25], [90, 75], [60, 95], [30, 95], [10, 75], [10, 25]]], dtype=np.int32),
+        "octagon": np.array([[[40, 0], [60, 0], [90, 30], [90, 70], [60, 100], [40, 100], [10, 70], [10, 30]]], dtype=np.int32)
+    }
+
     def __init__(self, labels, img_directory, dataset_name):
         self.labels = labels # json file
-        self.img_directory =img_directory # directory of images
+        self.img_directory = img_directory # directory of images
         self.dataset_name = dataset_name
         self.frames_df_csv = ""
         self.frames_df = self.generate_frames_df()
@@ -24,14 +56,31 @@ class analyzer():
         # TODO: MODIFY TRAINER_GUI SO COCO LABELS AREN'T DELETED
 
     def generate_frames_df(self):
+        ''' Generates a DataFrame from the analyzer's image directory of video frames
+        
+        Parameters
+        ----------
+        None.
+
+        Returns
+        -------
+        frames_df : DataFrame
+            A DataFrame containing information about the video's frames
+
+        '''
+        
+        # get list of file names
         files = sorted(glob.glob(self.img_directory + '*.txt'))
 
+        # create iteration variables
         frame_list = []
         frame_number = 0
 
+        # iterate through files
         for f in files:
             img = cv2.imread(f)
             
+            # create a dict of frames for the read file
             frame_info = {
                 "file_name": f,
                 "frame_number": frame_number,
@@ -40,52 +89,105 @@ class analyzer():
                 "frame_channels": img.shape[2],
             }
 
+            # append this frame's information
             frame_list.append(frame_info)
 
+            # increment the counter
             frame_number += 1
 
+        # convert the dict to a DataFrame
         frames_df = pd.DataFrame(frame_list)
+
+        # manage directories
         if not os.path.exists("model/"):
             os.mkdir("model")
         if not os.path.exists("model/datasets/"):
             os.mkdir("model/datasets/")
 
+        # save frames DataFrame to a csv 
         self.frames_df_csv = f"model/datasets/{self.dataset_name}_frames.csv"
         frames_df.to_csv(self.frames_df_csv, index=False)
 
+        # return the DataFrame
         return frames_df
 
-    def merge_close_contours_within_frames(contours_list, max_centroid_distance=200, max_edge_distance=5):
-        merged_contours_list = []
+    def merge_close_contours_within_frames(self, max_centroid_distance=200, max_edge_distance=5):
+        ''' Merges contours within a given frame that are within a certain distance of each other
 
-        for frame_contours in contours_list:
-            if not frame_contours:
+        Parameters
+        ----------
+        max_centroid_distance : int, optional
+            The maximum number of pixels between 2 centroids for them to be merged.
+            The default value is 200.
+        max_edge_distance : int, optional
+            The maximum number of pixels between 2 edges for them to be merged.
+            The default value is 5.
+
+        Returns
+        -------
+        merged_contours_list : list
+            A list of updated contours that have been merged together.
+        
+        '''
+        
+        # set up new list
+        merged_contours_list = []
+        # convert existing contours DataFrame to a list
+        # contours_list = self.contours_df.values.tolist()
+
+        # get list of unique frames
+        frames = self.contours_df["image_id"].unique().tolist()
+        
+        # set up iteration variable
+        counter = 0
+
+        # iterate through frames
+        while counter <= frames.max():
+            # skip if there was no detected contours in this frame
+            if counter not in frames:
                 merged_contours_list.append([])
                 continue
 
+            # the clusters already iterated through
             merged_clusters = []
 
+            # get a DF containing only the contours of this frame
+            frame_contours = self.contours_df[self.contours_df["image_id"] == counter]
+
+            # iterate through contours in this frame
             for contour in frame_contours:
+                # set up bools
                 merged_with_existing = False
                 merged_cluster = None
 
+                # merged_clusters being the clusters already iterated through
+                # iterate through the previously merged contours (worst case = n)
                 for cluster in merged_clusters:
+                    # iterate through the contours in the current merged cluster
                     for existing_contour in cluster:
                         # Calculate the centroid distance between the two contours
                         centroid_distance = np.linalg.norm(np.mean(contour, axis=0) - np.mean(existing_contour, axis=0))
 
+                        # determine whether to centroid distance criteria is met
                         if centroid_distance <= max_centroid_distance:
-                            # Compare the edges of the two contours
+
+                            # Compare the edges points of the two contours
+                            # the current contour
                             for pt_contour in contour:
+                                # the other contour
                                 for pt_existing in existing_contour:
+                                    # calculate distance
                                     edge_distance = np.linalg.norm(pt_contour - pt_existing)
 
+                                    # once a distance less than the threshold is found, exit out of this loop 
                                     if edge_distance <= max_edge_distance:
+                                        # add new contour to merged_cluster
                                         if merged_cluster is None:
                                             # Create a new merged cluster and add both contours
                                             merged_cluster = np.concatenate((contour, existing_contour))
                                             merged_with_existing = True
                                             break
+                                        # merge this cluster with the previous cluster
                                         else:
                                             # Merge the contour into the existing merged cluster
                                             merged_cluster = np.concatenate((merged_cluster, contour))
@@ -441,17 +543,7 @@ class analyzer():
 
 
 
-    reference_shapes = {
-        "circle": cv2.circle(np.zeros((100, 100), dtype=np.uint8), (50, 50), 40, 255, -1),
-        "triangle": np.array([[[10, 90], [50, 10], [90, 90]]], dtype=np.int32),
-        "square": np.array([[[10, 10], [90, 10], [90, 90], [10, 90]]], dtype=np.int32),
-        "diamond": np.array([[[50, 10], [90, 50], [50, 90], [10, 50]]], dtype=np.int32),
-        "trapezoid": np.array([[[10, 90], [30, 10], [70, 10], [90, 90]]], dtype=np.int32),
-        "pentagon": np.array([[[50, 10], [90, 30], [75, 80], [25, 80], [10, 30]]], dtype=np.int32),
-        "hexagon": np.array([[[50, 5], [90, 30], [90, 70], [50, 95], [10, 70], [10, 30]]], dtype=np.int32),
-        "heptagon": np.array([[[50, 5], [90, 25], [90, 75], [60, 95], [30, 95], [10, 75], [10, 25]]], dtype=np.int32),
-        "octagon": np.array([[[40, 0], [60, 0], [90, 30], [90, 70], [60, 100], [40, 100], [10, 70], [10, 30]]], dtype=np.int32)
-    }
+
 
     porosity_list = extract_internal_porosity(contours_list, frames_info)
     shape_similarity_list = extract_shape_similarity(contours_list, reference_shapes)

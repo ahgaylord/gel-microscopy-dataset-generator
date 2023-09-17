@@ -16,7 +16,7 @@ Coming soon :)
 
 # Contributions
 
-This software was developed by Amory Gaylord with the contributions and mentorship of Cormak Weeks and Dr. Lilian Hsiao (North Carolina State University).
+This software was developed by Cormak Weeks and Amory Gaylord with the contributions and mentorship of Dr. Lilian Hsiao (North Carolina State University).
 
 # Acknowledgements
 
