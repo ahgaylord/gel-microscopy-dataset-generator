@@ -45,6 +45,9 @@ class analyzer():
         "octagon": np.array([[[40, 0], [60, 0], [90, 30], [90, 70], [60, 100], [40, 100], [10, 70], [10, 30]]], dtype=np.int32)
     }
 
+    MAX_CENTROID_DISTANCE = 200
+    MAX_EDGE_DISTANCE = 5
+
     def __init__(self, labels, img_directory, dataset_name):
         self.labels = labels # json file
         self.img_directory = img_directory # directory of images
@@ -53,7 +56,20 @@ class analyzer():
         self.frames_df = self.generate_frames_df()
         self.contours_df = pd.read_json(self.labels, orient='records', columns=["segmentation", "area", "iscrowd", "image_id", "bbox", "category_id", "id", "ignore"])
 
+        # set default fields
+        self.max_centroid_distance = self.MAX_CENTROID_DISTANCE
+        self.max_edge_distance = self.MAX_EDGE_DISTANCE
+
         # TODO: MODIFY TRAINER_GUI SO COCO LABELS AREN'T DELETED
+
+        # generate_bounding_boxes(frames_info, dataset_name)
+        # generate_contours(frames_info, dataset_name, epsilon=5)
+        # contours_list = generate_contours(frames_info, dataset_name)
+        # features_list = generate_features(contours_list)
+        # merged_contours_list = merge_close_contours_within_frames(contours_list, max_centroid_distance=200, max_edge_distance=7)
+        # save_merged_contours(merged_contours_list, frames_info, dataset_name)
+        # rotation_list = contour_rotation(contours_list)
+        # new_contours_list=new_generate_contours(frames_info, dataset_name, epsilon=1)
 
     def generate_frames_df(self):
         ''' Generates a DataFrame from the analyzer's image directory of video frames
@@ -110,6 +126,104 @@ class analyzer():
 
         # return the DataFrame
         return frames_df
+    
+    def compare_contours(self, contour_a, contour_b):
+        ''' Compares 2 contours a and b.
+        
+        Parameters
+        ----------
+        contour_a : list
+            A list of points representing the contour being examined
+        contour_b : list
+            A list of points representing a previously examined contour
+
+        Returns
+        -------
+        merged_with_existing : bool
+            True if contours a and b were merged, else returns False
+
+        '''
+
+        # set up
+        merge_with_existing = False
+
+        # Calculate the centroid distance between the two contours
+        centroid_distance = np.linalg.norm(np.mean(contour_a, axis=0) - np.mean(contour_b, axis=0))
+
+        # determine whether to centroid distance criteria is met
+        if centroid_distance <= self.max_centroid_distance:
+
+            # Compare the edges points of the two contours
+            # the current contour
+            for pt_a in contour_a:
+                # the other contour
+                for pt_b in contour_b:
+                    # calculate distance
+                    edge_distance = np.linalg.norm(pt_a - pt_b)
+
+                    # once a distance less than the threshold is found, exit out of this loop 
+                    if edge_distance <= self.max_edge_distance:
+                        # add new contour to merged_cluster
+                        merge_with_existing = True
+                        break
+
+                if merge_with_existing:
+                    return merge_with_existing
+                
+        return False
+    
+    def merge_contours(self, contour_a, merged_clusters):
+        ''' Compares and then (if necessary) merges a contour into a previously merged cluster,
+        else creates a new cluster for the contour
+        
+        Parameters
+        ----------
+        contour_a : list
+            A list of points representing the contour being examined
+        merged_clusters : nparray
+            Contains all clusters and the contours contained in them
+
+        Returns
+        -------
+        merged_clusters : nparray
+            The updated nparray of clusters and contours
+
+        '''
+
+        # set up bools
+        merge_with_existing = False
+        merged_cluster = None
+
+        # merged_clusters being the clusters already iterated through
+        # iterate through the previously merged contours (worst case = n)
+        for cluster in merged_clusters:
+            # iterate through the contours in the current merged cluster
+            for contour_b in cluster:
+                # determine whether to merge
+                merge_with_existing = self.compare_contours(contour_a, contour_b)
+
+                if merge_with_existing:
+                    if merged_cluster is None:
+                        # Create a new merged cluster and add both contours
+                        merged_cluster = np.concatenate((contour_a, contour_b))
+                        break
+                    # merge this cluster with the previous cluster
+                    else:
+                        # Merge the contour into the existing merged cluster
+                        merged_cluster = np.concatenate((merged_cluster, contour_a))
+                        break
+
+            if merge_with_existing:
+                break
+
+        if not merge_with_existing:
+            merged_clusters.append([contour_a])
+
+        if merged_cluster is not None:
+            # Add the merged cluster to the list if it was formed
+            merged_clusters.append([merged_cluster])
+
+        return merged_clusters
 
     def merge_close_contours_within_frames(self, max_centroid_distance=200, max_edge_distance=5):
         ''' Merges contours within a given frame that are within a certain distance of each other
@@ -129,8 +243,12 @@ class analyzer():
             A list of updated contours that have been merged together.
         
         '''
+
+        # update fields
+        self.max_centroid_distance = max_centroid_distance
+        self.max_edge_distance = max_edge_distance
         
-        # set up new list
+        # set up new list of all clusters on all frames
         merged_contours_list = []
         # convert existing contours DataFrame to a list
         # contours_list = self.contours_df.values.tolist()
@@ -155,102 +273,14 @@ class analyzer():
             frame_contours = self.contours_df[self.contours_df["image_id"] == counter]
 
             # iterate through contours in this frame
-            for contour in frame_contours:
-                # set up bools
-                merged_with_existing = False
-                merged_cluster = None
-
-                # merged_clusters being the clusters already iterated through
-                # iterate through the previously merged contours (worst case = n)
-                for cluster in merged_clusters:
-                    # iterate through the contours in the current merged cluster
-                    for existing_contour in cluster:
-                        # Calculate the centroid distance between the two contours
-                        centroid_distance = np.linalg.norm(np.mean(contour, axis=0) - np.mean(existing_contour, axis=0))
-
-                        # determine whether to centroid distance criteria is met
-                        if centroid_distance <= max_centroid_distance:
-
-                            # Compare the edges points of the two contours
-                            # the current contour
-                            for pt_contour in contour:
-                                # the other contour
-                                for pt_existing in existing_contour:
-                                    # calculate distance
-                                    edge_distance = np.linalg.norm(pt_contour - pt_existing)
-
-                                    # once a distance less than the threshold is found, exit out of this loop 
-                                    if edge_distance <= max_edge_distance:
-                                        # add new contour to merged_cluster
-                                        if merged_cluster is None:
-                                            # Create a new merged cluster and add both contours
-                                            merged_cluster = np.concatenate((contour, existing_contour))
-                                            merged_with_existing = True
-                                            break
-                                        # merge this cluster with the previous cluster
-                                        else:
-                                            # Merge the contour into the existing merged cluster
-                                            merged_cluster = np.concatenate((merged_cluster, contour))
-                                            merged_with_existing = True
-                                            break
-
-                                if merged_with_existing:
-                                    break
-
-                        if merged_with_existing:
-                            break
-
-                    if merged_with_existing:
-                        break
-
-                if not merged_with_existing:
-                    merged_clusters.append([contour])
-
-                if merged_cluster is not None:
-                    # Add the merged cluster to the list if it was formed
-                    merged_clusters.append([merged_cluster])
+            for contour_a in frame_contours:
+                merged_clusters = self.merge_contours(contour_a["segmentation"], merged_clusters)
 
             merged_contours_list.append(merged_clusters)
 
         return merged_contours_list
 
-    def save_merged_contours(merged_contours_list, frames_df, dataset_name):
-        contours_folder = "contours"
-        merged_folder = "merged"
-        dataset_folder = os.path.join("/content/drive/My Drive", "datasets", dataset_name)
-        contours_folder_path = os.path.join(dataset_folder, contours_folder)
-        merged_folder_path = os.path.join(contours_folder_path, merged_folder)
-
-        if not os.path.exists(merged_folder_path):
-            os.makedirs(merged_folder_path)
-
-        for index, merged_clusters in enumerate(merged_contours_list):
-            frame_name = frames_df.loc[index, "file_name"]
-            merged_frame_path = os.path.join(merged_folder_path, frame_name)
-
-            # Get frame dimensions from frames_df
-            height = frames_df.loc[index, "frame_height"]
-            width = frames_df.loc[index, "frame_width"]
-
-            frame_with_merged_contours = np.zeros((height, width, 3), dtype=np.uint8)
-
-            # Process each merged cluster separately
-            for cluster in merged_clusters:
-                # Convert cluster to a list of contours
-                cluster_contours = [contour for contour in cluster]
-
-                # Calculate convex hulls of individual contours
-                convex_hulls = [cv2.convexHull(contour) for contour in cluster_contours]
-
-                # Merge convex hulls to create a single convex hull for the cluster
-                merged_convex_hull = np.vstack(convex_hulls)
-
-                # Draw the merged convex hull directly onto the frame using fillPoly
-                cv2.fillPoly(frame_with_merged_contours, [merged_convex_hull], (255, 255, 100))
-
-            cv2.imwrite(merged_frame_path, frame_with_merged_contours)
-    #---------------------------------------------------------------------------
-    def generate_features(contours_list):
+    def generate_features(self, contours_list):
         features_list = []
 
         for frame_idx, contours in enumerate(contours_list):
@@ -275,7 +305,7 @@ class analyzer():
             features_list.append(frame_features)
 
         return features_list
-    #---------------------------------------------------------------------------
+    
     def contour_rotation(contours_list):
         rotation_list = []
 
@@ -296,7 +326,7 @@ class analyzer():
             rotation_list.append(rotation_frame)
 
         return rotation_list
-    #------------------------------------------------------------------------------
+
     def new_generate_contours(frames_df, dataset_name, epsilon=1):
         contours_folder = "merged_contours"
         dataset_folder = os.path.join("/content/drive/My Drive", "datasets", dataset_name)
@@ -339,47 +369,6 @@ class analyzer():
             cv2.imwrite(contours_frame_path, frame_with_contours)
 
         return new_contours_list
-    #--------Functions---------------------
-    generate_bounding_boxes(frames_info, dataset_name)
-    generate_contours(frames_info, dataset_name, epsilon=5)
-    contours_list = generate_contours(frames_info, dataset_name)
-    features_list = generate_features(contours_list)
-    merged_contours_list = merge_close_contours_within_frames(contours_list, max_centroid_distance=200, max_edge_distance=7)
-    save_merged_contours(merged_contours_list, frames_info, dataset_name)
-    rotation_list = contour_rotation(contours_list)
-    new_contours_list=new_generate_contours(frames_info, dataset_name, epsilon=1)
-
-    def merge_contours_on_frames(contours_list, new_contours_list, dataset_name):
-        merged_contours_folder = "merged_contours"
-        dataset_folder = os.path.join("/content/drive/My Drive", "datasets", dataset_name)
-        train_folder = os.path.join(dataset_folder, "train")
-        merged_contours_folder_path = os.path.join(dataset_folder, merged_contours_folder)
-
-        if not os.path.exists(merged_contours_folder_path):
-            os.makedirs(merged_contours_folder_path)
-
-        for index, row in frames_info.iterrows():
-            frame_name = row["file_name"]
-            frame_path = os.path.join(train_folder, frame_name)
-            frame = cv2.imread(frame_path)
-
-            if frame is None:
-                print("Error reading frame:", frame_name)
-                continue
-
-            # Draw contours from contours_list
-            for contour in contours_list[index]:
-                cv2.drawContours(frame, [contour], 0, (0, 255, 0), 2)
-
-            # Draw contours from new_contours_list
-            for contour in new_contours_list[index]:
-                cv2.drawContours(frame, [contour], 0, (0, 0, 255), 2)
-
-            merged_frame_path = os.path.join(merged_contours_folder_path, frame_name)
-            cv2.imwrite(merged_frame_path, frame)
-
-    # Assuming contours_list and new_contours_list are generated already
-    merge_contours_on_frames(contours_list, new_contours_list, dataset_name)
 
     #Extracting Parameters
 
@@ -539,11 +528,6 @@ class analyzer():
             key_tracked_positions.append(frame_positions)
 
         return key_tracked_positions
-
-
-
-
-
 
     porosity_list = extract_internal_porosity(contours_list, frames_info)
     shape_similarity_list = extract_shape_similarity(contours_list, reference_shapes)
