@@ -4,7 +4,11 @@ Contains software designed for the generation of gel microscopy datasets. Integr
 
 # Set-Up and Installation
 
-1. To install the required programs and create an executable file shortcut for this program, please follow the [set-up instructions](installingpythonguide.md).
+1. To install the required programs and set up this program, please follow the [set-up instructions](installingpythonguide.md).
+
+2. To run after the set-up instructions have been completed, first navigate in your file explorer to the gel-microscopy-dataset-generator folder (as seen below). Then right click to "Git Bash here" and enter the command "./run.sh". The GUI will then launch.
+
+![Screenshot of file explorer in the folder containing the files in this Github repository. The alt click menu is open showing the "Show more options" button.](resources/run.png)
 
 # Intended Use
 
@@ -26,7 +30,7 @@ This research was supported by the North Carolina State University Engineering E
 
 Check out the [bibliography](https://github.com/ahgaylord/gel-microscopy-dataset-generator/blob/main/bibliography.bib).
 
-# Cite Me!
+# Cite Us!
 
 If you use this software in your research, please cite us! The bibtex citation for this software is as follows:
 

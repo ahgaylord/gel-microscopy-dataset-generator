@@ -1,4 +1,4 @@
-1. First download and install [Git bash](https://git-scm.com/downloads). Then download and install [Python v3.11](https://www.python.org/downloads/).
+1. First download and install [Git bash](https://git-scm.com/downloads). Then download and install [Python v3.11](https://www.python.org/downloads/). When installing Python, be sure to select the "Add Python to Path" option."
     
 2. Click on the green Code button on the top right hand of this page.
 
@@ -25,4 +25,8 @@
 8. Type in the following commands (** $ denotes the beginning of a new command. Do not enter it onto the command line).
 
         $ cd gel-microscopy-dataset-generator/src
-        $ 
+        $ ./setup.sh
+
+9. Now, to run the GUI now and in future sessions, navigate to the folder containing the files associated with this project (e.g., the gel-microscopy-dataset-generator folder), Git Bash in that folder (see Step 4), and in Git Bash, type:
+
+        ./run.sh
