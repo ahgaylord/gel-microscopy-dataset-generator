@@ -8,11 +8,13 @@ sam_b.pt
 runs/*
 SECRET
 YOLOv8
-vid/test
+src/vid/test
 .vscode
 __pycache__
-vid
-model/__pycache__
+src/vid
+src/datasets
+src/model/__pycache__
+src/model/datasets
 dist
 build
 installer

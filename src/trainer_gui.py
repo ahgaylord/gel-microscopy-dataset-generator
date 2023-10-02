@@ -2308,13 +2308,13 @@ class Previewing:
         None.
 
         """
-
+        
         # destroy children widgets 
         for c in self.media_window.winfo_children():
             c.destroy()
 
         # determine if video or image
-        if ".mp4" in f:
+        if ".mp4" in f or ".avi" in f:
             # set up video player
             videoplayer = tktv(master=self.media_window, scaled=True)
             # load video
