@@ -11,7 +11,6 @@ YOLOv8
 src/vid/test
 .vscode
 __pycache__
-src/vid
 src/datasets
 src/model/__pycache__
 src/model/datasets
