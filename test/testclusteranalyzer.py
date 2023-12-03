@@ -10,23 +10,23 @@ class TestClusterAnalyzer(unittest.TestCase):
     IMG_ONE = "testdocs/fileOne.png"
     IMG_TWO = "testdocs/fileTwo.png"
     IMG_THREE = "testdocs/fileThree.png"
-    IMG_FOUR = "testdocs/fileFour.png"
-    IMG_FIVE = "testdocs/fileFive.png"
+    # IMG_FOUR = "testdocs/fileFour.png"
+    # IMG_FIVE = "testdocs/fileFive.png"
 
-    VID_ONE = "testdocs/vidOne.mp4"
-    VID_TWO = "testdocs/vidTwo.mp4"
-    VID_THREE = "testdocs/vidThree.mp4"
+    # VID_ONE = "testdocs/vidOne.mp4"
+    # VID_TWO = "testdocs/vidTwo.mp4"
+    # VID_THREE = "testdocs/vidThree.mp4"
 
     def __init__(self, methodName: str = "runTest") -> None:
         self.test_one = cv2.imread(self.IMG_ONE)
         self.test_two = cv2.imread(self.IMG_TWO)
         self.test_three = cv2.imread(self.IMG_THREE)
-        self.test_four = cv2.imread(self.IMG_FOUR)
-        self.test_five = cv2.imread(self.IMG_FIVE)
+        # self.test_four = cv2.imread(self.IMG_FOUR)
+        # self.test_five = cv2.imread(self.IMG_FIVE)
 
-        self.test_six = cv2.imread(self.VID_ONE)
-        self.test_seven = cv2.imread(self.VID_TWO)
-        self.test_eight = cv2.imread(self.VID_THREE)
+        # self.test_six = cv2.imread(self.VID_ONE)
+        # self.test_seven = cv2.imread(self.VID_TWO)
+        # self.test_eight = cv2.imread(self.VID_THREE)
 
         self.program = trainer_gui.Program()
 
@@ -40,12 +40,12 @@ class TestClusterAnalyzer(unittest.TestCase):
         self.test_one = cv2.imread(self.IMG_ONE)
         self.test_two = cv2.imread(self.IMG_TWO)
         self.test_three = cv2.imread(self.IMG_THREE)
-        self.test_four = cv2.imread(self.IMG_FOUR)
-        self.test_five = cv2.imread(self.IMG_FIVE)
+        # self.test_four = cv2.imread(self.IMG_FOUR)
+        # self.test_five = cv2.imread(self.IMG_FIVE)
 
-        self.test_six = cv2.imread(self.VID_ONE)
-        self.test_seven = cv2.imread(self.VID_TWO)
-        self.test_eight = cv2.imread(self.VID_THREE)
+        # self.test_six = cv2.imread(self.VID_ONE)
+        # self.test_seven = cv2.imread(self.VID_TWO)
+        # self.test_eight = cv2.imread(self.VID_THREE)
 
     def setUp(self) -> None:
         self.program = trainer_gui.Program()
@@ -62,7 +62,7 @@ class TestClusterAnalyzer(unittest.TestCase):
     def test_features(self):
         """ Tests the generate_feature function
         """
-
+        # self.assertEqual()
 
         self.assertEqual(sum([1, 2, 3]), 6, "Should be 6")
 
