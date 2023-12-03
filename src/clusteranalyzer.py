@@ -281,6 +281,18 @@ class analyzer():
         return merged_contours_list
 
     def generate_features(self, contours_list):
+        """ Generates a list of features in each contour
+
+        Parameters
+        ----------
+        contours_list : dataframe
+            The dataframe of contours
+
+        Returns
+        -------
+        Dataframe  
+            data frame of features associated with each contour
+        """
         features_list = []
 
         for frame_idx, contours in enumerate(contours_list):
@@ -305,6 +317,7 @@ class analyzer():
             features_list.append(frame_features)
 
         return features_list
+        
     
     def contour_rotation(contours_list):
         rotation_list = []
